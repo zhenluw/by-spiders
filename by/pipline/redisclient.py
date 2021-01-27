@@ -1,7 +1,11 @@
-import random
-
-import redis
 import logging
+import os
+import random
+import sys
+import redis
+curPath = os.path.abspath(os.path.dirname(__file__))
+rootPath = os.path.split(curPath)[0]
+sys.path.append(rootPath)
 from by.utils import config
 
 
@@ -24,7 +28,7 @@ class RedisClient(object):
                         "target_max_memory": 1024
                         }
         """
-        temp_pool = redis.ConnectionPool(host=config.redis_host, port=config.redis_port, db=db, password=None, decode_responses=True)
+        temp_pool = redis.ConnectionPool(host=config.redis_host, port=config.redis_port, db=db, password=config.redis_password, decode_responses=True)
         self.connection_pool = temp_pool
         temp_client = redis.Redis(connection_pool=self.connection_pool)
         self.connection_client = temp_client

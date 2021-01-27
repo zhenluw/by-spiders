@@ -1,5 +1,8 @@
-import traceback
-
+import os
+import sys
+curPath = os.path.abspath(os.path.dirname(__file__))
+rootPath = os.path.split(curPath)[0]
+sys.path.append(rootPath)
 from by.pipline import item
 
 
@@ -9,6 +12,7 @@ class Shop(item.Item):
     shopid = item.Field()
     shopname = item.Field()
     icon = item.Field()
+    url = item.Field()
 
     products = item.Field()
     followers = item.Field()
@@ -25,6 +29,7 @@ class Shop(item.Item):
     update_time = item.Field()
     create_by = item.Field()
     update_by = item.Field()
+    login_user = item.Field()
 
 
 def trans_shop(result):
@@ -47,11 +52,13 @@ class Product(item.Item):
     score = item.Field()
     ratings = item.Field()
     sold = item.Field()
+    historical_sold = item.Field()
     price = item.Field()
     height_price = item.Field()
+    min_price = item.Field()
+    max_price = item.Field()
 
     quantity = item.Field()
-    login_user = item.Field()
     shopid = item.Field()
     category = item.Field()
     brand = item.Field()
@@ -63,6 +70,12 @@ class Product(item.Item):
     create_by = item.Field()
 
     update_by = item.Field()
+    currency = item.Field()
+    url = item.Field()
+    shop_url  = item.Field()
+    shipping_from = item.Field()
+    shipping_cost = item.Field()
+
 
 
 def trans_product(result):
@@ -91,6 +104,8 @@ class SubProduct(item.Item):
     update_time = item.Field()
     create_by = item.Field()
     update_by = item.Field()
+    url = item.Field()
+
 
 
 def trans_sub_product(result):
@@ -104,6 +119,7 @@ def trans_sub_product(result):
 
 
 class Task(item.Item):
+    webid = item.Field()
     shopid = item.Field()
     shopname = item.Field()
     country = item.Field()
@@ -112,6 +128,9 @@ class Task(item.Item):
     parse_type = item.Field()
     level = item.Field()
     url = item.Field()
+    sort = item.Field()
+    page = item.Field()
+    keyword = item.Field()
 
 
 def trans_task(result):
@@ -123,5 +142,30 @@ def trans_task(result):
             pass
     return task
 
+
+class Search(item.Item):
+    webid = item.Field()
+    country = item.Field()
+    shopid = item.Field()
+    keyword = item.Field()
+    create_time = item.Field()
+    update_time = item.Field()
+    sort = item.Field()
+    spu = item.Field()
+    sold = item.Field()
+    historical_sold = item.Field()
+    position = item.Field()
+    ad = item.Field()
+    shipping_from = item.Field()
+
+
+def trans_search(result):
+    search = Search()
+    for key in result.keys():
+        try:
+            search[key] = result[key]
+        except Exception:
+            pass
+    return search
 
 

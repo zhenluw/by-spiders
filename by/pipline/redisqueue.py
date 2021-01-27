@@ -1,11 +1,16 @@
+import os
+import sys
 import redis
+curPath = os.path.abspath(os.path.dirname(__file__))
+rootPath = os.path.split(curPath)[0]
+sys.path.append(rootPath)
 from by.utils import config
 
 
 class RedisQueue(object):
     def __init__(self, namespace,name,  **redis_kwargs):
         # redis的默认参数为：host='localhost', port=6379, db=0， 其中db为定义redis database的数量
-        self.__db= redis.Redis(host=config.redis_host, port=config.redis_port, db=10)
+        self.__db= redis.Redis(host=config.redis_host, port=config.redis_port, password=config.redis_password,db=10)
         self.key = '%s:%s' %(namespace, name)
 
     def qsize(self):
