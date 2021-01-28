@@ -52,6 +52,14 @@ class Pool():
         self._conn.commit()
         return count
 
+    def query0(self, sql, param=None):
+        if param is None:
+            count = self._cursor.executemany(sql)
+        else:
+            count = self._cursor.executemany(sql, param)
+        self._conn.commit()
+        return count
+
     def begin(self):
         """
         @summary: 开启事务
@@ -116,6 +124,48 @@ class Pool():
                 row_str=row_str+'"%s"'%(dic[key]) +','
                 #判断表是否存在，存在执行try，不存在执行except新建表，再insert
             sql = "INSERT INTO %s (%s) VALUES (%s)"%(table_name,col[:-1],row_str[:-1])
+            self._cursor.execute(sql)
+            self.dispose()
+            print('{}--插入数据'.format(project_name))
+        except Exception as e:
+            print('{}存储异常：{}'.format(project_name,sql),e)
+            traceback.print_exc()
+        finally:
+            # 改完了一定要释放锁:
+            lock.release()
+
+    def replace_insert_temp(self,table_name,dic,project_name):
+        lock.acquire()
+        sql=''
+        try:
+            col = ''  #列的字段
+            row_str = '' #行字段
+            for key in dic.keys():
+                col = col+key+','
+                row_str=row_str+'"%s"'%(dic[key]) +','
+                #判断表是否存在，存在执行try，不存在执行except新建表，再insert
+            sql = "replace into %s (%s) VALUES (%s)"%(table_name,col[:-1],row_str[:-1])
+            self._cursor.execute(sql)
+            self.dispose()
+            print('{}--插入数据'.format(project_name))
+        except Exception as e:
+            print('{}存储异常：{}'.format(project_name,sql),e)
+            traceback.print_exc()
+        finally:
+            # 改完了一定要释放锁:
+            lock.release()
+
+    def replace_temp(self,table_name,dic,project_name):
+        lock.acquire()
+        sql=''
+        try:
+            col = ''  #列的字段
+            row_str = '' #行字段
+            for key in dic.keys():
+                col = col+key+','
+                row_str=row_str+'"%s"'%(dic[key]) +','
+                #判断表是否存在，存在执行try，不存在执行except新建表，再insert
+            sql = "replace  %s (%s) VALUES (%s)"%(table_name,col[:-1],row_str[:-1])
             self._cursor.execute(sql)
             self.dispose()
             print('{}--插入数据'.format(project_name))
@@ -204,6 +254,17 @@ class Pool():
         """
         return self.__query(sql, param)
 
+    def update_many(self, sql,project_name, param=None):
+        """
+        @summary: 更新数据表记录
+        @param sql: ＳＱＬ格式及条件，使用(%s,%s)
+        @param param: 要更新的  值 tuple/list
+        @return: count 受影响的行数
+        """
+        count = self.query0(sql, param)
+        print('{}--批量update'.format(project_name))
+        return count
+
     def insert(self, sql, param=None):
         """
         @summary: 更新数据表记录
@@ -239,7 +300,7 @@ def update(sql, params):
 
 
 def save(sql, params):
-    mysql =Pool("notdbMysql")
+    mysql =Pool()
     mysql.insert(sql, params)
     # 释放资源
     # mysql.dispose()
@@ -247,19 +308,20 @@ def save(sql, params):
 
 if __name__ == '__main__':
     #查询一条数据的示例代码
-    mysql = Pool()
-    sql_one = "select * from template"
-    result = mysql.get_one_note(sql_one)
-    print(result)
+    # mysql = Pool()
+    # sql_one = "select * from template"
+    # result = mysql.get_one_note(sql_one)
+    # print(result)
     # 释放资源
     # mysql.dispose()
 
     #存储数据
-    # try:
-    #     save("INSERT IGNORE INTO book (bname, author,page,classify,read_type)VALUES( %s, %s, %s, %s, %s)",('解忧杂货店','苍叶鬼屋','300','文学','未读'))
-    # except Exception as e:
-    #     print(str(e))
-    #
+    try:
+        save("replace into shopee_shope (shopid, shopname)VALUES( %s, %s)"
+             ,('2836698382','苍叶鬼屋'))
+    except Exception as e:
+        print(str(e))
+
     # #更新数据
     # try:
     #     update("UPDATE book SET page=%s , bname= %s where read_type= %s",('100','战争论','未读'))

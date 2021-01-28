@@ -76,6 +76,12 @@ class Product(item.Item):
     shipping_from = item.Field()
     shipping_cost = item.Field()
 
+    cid1 = item.Field()
+    cname1 = item.Field()
+    cid2 = item.Field()
+    cname2 = item.Field()
+    cid3 = item.Field()
+    cname3 = item.Field()
 
 
 def trans_product(result):
@@ -106,6 +112,8 @@ class SubProduct(item.Item):
     update_by = item.Field()
     url = item.Field()
 
+    sold = item.Field()
+    before_price = item.Field()
 
 
 def trans_sub_product(result):
@@ -168,4 +176,63 @@ def trans_search(result):
             pass
     return search
 
+
+class ShopChange(item.Item):
+    shopid = item.Field()
+    shopname = item.Field()
+    icon = item.Field()
+    products = item.Field()
+    followers = item.Field()
+
+    following = item.Field()
+    rating_num = item.Field()
+    rating = item.Field()
+    chatperformance = item.Field()
+    abstract = item.Field()
+
+
+def trans_shop_change(result):
+    shop_change = ShopChange()
+    for key in result.keys():
+        try:
+            shop_change[key] = result[key]
+        except Exception:
+            pass
+    return shop_change
+
+
+class ProductChange(item.Item):
+    historical_sold = item.Field()
+    price = item.Field()
+    height_price = item.Field()
+    product_title = item.Field()
+    quantity = item.Field()
+
+
+def trans_product_change(result):
+    product_change = ProductChange()
+    for key in result.keys():
+        try:
+            product_change[key] = result[key]
+        except Exception:
+            pass
+    return product_change
+
+
+class ProductSubChange(item.Item):
+    sales_attributes = item.Field()
+    price = item.Field()
+    before_price = item.Field()
+    sold = item.Field()
+    quantity = item.Field()
+
+
+def trans_product_sub_change(result):
+    product_sub_change = ProductSubChange()
+    for key in result.keys():
+        try:
+            product_sub_change[key] = result[key]
+        except Exception:
+            pass
+    return product_sub_change
 

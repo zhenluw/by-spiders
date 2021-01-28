@@ -1,9 +1,10 @@
 import os
 import sys
-import redis
 curPath = os.path.abspath(os.path.dirname(__file__))
 rootPath = os.path.split(curPath)[0]
+rootPath = os.path.split(rootPath)[0]
 sys.path.append(rootPath)
+import redis
 from by.utils import config
 
 

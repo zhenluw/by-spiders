@@ -1,5 +1,5 @@
 """
- * @Project_Name: lav-spiders
+ * @Project_Name: by-spiders
  * @DESCRIPTION:
  * @Author: wzl
  * @Date: 2021/1/27 16:43
@@ -15,7 +15,7 @@ rootPath = os.path.split(rootPath)[0]
 rootPath = os.path.split(rootPath)[0]
 sys.path.append(rootPath)
 from by.spiders.shopee.search import search
-from by.spiders.shopee.shop import shop, goods_list,goods
+from by.spiders.shopee.shop import shop, product_list, product
 from by.pipline.redisqueue import RedisQueue
 from by.pipline.template import trans_task
 
@@ -30,15 +30,15 @@ def deal(task):
     if parse_type == 'shop':
         shop(task)
     if parse_type == 'goods_list':
-        goods_list(task)
+        product_list(task)
     if parse_type == 'goods':
-        goods(task)
-
+        product(task)
 
 
 def shopee():
     while True:
         queue_result = queue_shopee.get_nowait()
+        # print(queue_result)
         if queue_result is not None:
             result_f = json.loads(queue_result)
             if isinstance(result_f,dict):
@@ -58,8 +58,9 @@ def shopee():
 def shopee_search():
     while True:
         queue_result = queue_shopee_search.get_nowait()
+        # print(queue_result)
         if queue_result is not None:
-            result_f = json.loads(queue_result)
+            result_f = json.loads(queue_result.decode())
             if isinstance(result_f,dict):
                 task = trans_task(result_f)
                 deal(task)
@@ -74,9 +75,8 @@ def shopee_search():
             time.sleep(10)
 
 
-
 if __name__ == '__main__':
-    for i in range(10):
+    for i in range(5):
         t2 = threading.Thread(target = shopee)     # target是要执行的函数名（不是函数），args是函数对应的参数，以元组的形式存在
         t2.start()
     t1 = threading.Thread(target = shopee_search)     # target是要执行的函数名（不是函数），args是函数对应的参数，以元组的形式存在

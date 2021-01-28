@@ -50,10 +50,11 @@ def search(task):
     keyword = task['keyword']
     page = task['page']
     try:
-        url = "https://ph.xiapibuy.com/api/v2/search_items/?by={}&keyword={}&limit=50&newest=0&order=desc&page_type=search&version=2".format(sort,keyword)
+        # url = "https://ph.xiapibuy.com/api/v2/search_items/?by={}&keyword={}&limit=50&newest=0&order=desc&page_type=search&version=2".format(sort,keyword)
+        url = "https://ph.xiapibuy.com/api/v2/search_items/?by={}&keyword={}&limit=50&locations=-2&newest=0&order=desc&page_type=search&skip_autocorrect=1&version=2".format(sort,keyword)
         print(url)
         html = get_html(url)
-        # print(html)
+        print(html)
         json_str = json.loads(html)
 
         search_list = []
@@ -82,15 +83,8 @@ def search(task):
             num += 1
             search_list.append(search)
 
-            new_task = trans_task(task)
-            new_task['shopid'] = shopid
-            new_task['country'] = "PH"
-            new_task['level'] = 1
-            new_task['webid'] = 1
-            new_task['parse_type'] = 'shop'
-            queue_shopee.put(json.dumps(dict(new_task),cls = DateEnconding))
-            redis_db.hset('shops',shopid,json.dumps(dict(new_task),cls = DateEnconding))
-
+            redis_db.hset('shops',shopid,0)
+            # redis_db.set(shopid,json.dumps(dict(new_task),cls = DateEnconding))
 
         dbpool.Pool().insert_many_temp('shopee_search', search_list,'shopee_search')
 
@@ -113,11 +107,21 @@ if __name__ == '__main__':
         "page": 1,
     }
     # queue_shopee_search.put(json.dumps(dict(task),cls = DateEnconding))
-    # search(task)
-    cookie = redis_db.random("shops")
-    print(cookie)
-    cookie = redis_db.hgetall("shops")
-    for i in cookie:
-        print(i)
+    search(task)
+
+    # shopids = redis_db.hgetall("shops")
+    # for shopid in shopids:
+    #     # print(shopid)
+    #     task = {
+    #         "shopid":shopid,
+    #         "parse_type":"shop",
+    #         "webid":1,
+    #         "level": 1,
+    #         "country": "PH",
+    #     }
+    #     queue_shopee.put(json.dumps(dict(task),cls = DateEnconding))
+
+    # shopids = redis_db.hget("shops",'41311013')
+    # print(shopids)
 
 

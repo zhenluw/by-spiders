@@ -136,6 +136,13 @@ class RedisClient(object):
         # self.mutex.release()
         return result
 
+    def hget(self, name, key):
+        r = self.connection_client
+        # self.mutex.acquire()
+        result = r.hget(name, key)
+        # self.mutex.release()
+        return result
+
     def flushdb(self):
         r = self.connection_client
         r.flushdb(asynchronous=False)

@@ -1,5 +1,5 @@
 import socket
-# ip = socket.gethostbyname(socket.gethostname())
+ip = socket.gethostbyname(socket.gethostname())
 
 # # Redis数据库地址
 redis_host = 'r-m5efmwd86jari4xiq4pd.redis.rds.aliyuncs.com'
@@ -17,14 +17,15 @@ mysql_db = 'shopee'
 
 
 
-# if ip.startswith("192.168"):
-#     redis_host = 'localhost'
-#
-#     mysql_host='localhost'
-#     mysql_port=3306
-#     mysql_user='root'
-#     mysql_password='123456'
-#     mysql_db='zhonghai'
+if ip.startswith("192.168"):
+    redis_host = 'localhost'
+    redis_password = ''
+
+    mysql_host='localhost'
+    mysql_port=3306
+    mysql_user='root'
+    mysql_password='123456'
+    mysql_db='zhonghai'
 
 
 

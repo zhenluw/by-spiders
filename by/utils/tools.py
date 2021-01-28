@@ -12,7 +12,7 @@ import time
 import re
 import traceback
 
-from fake_useragent import UserAgent
+# from fake_useragent import UserAgent
 
 
 def str_to_timsStamp(timeStr):
@@ -188,8 +188,8 @@ def replace_special_num(s):
     return re.sub("\D", "", s)
 
 
-def ua():
-    return UserAgent().random
+# def ua():
+#     return UserAgent().random
 
 
 def random_ua():
