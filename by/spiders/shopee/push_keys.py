@@ -64,7 +64,7 @@ def push_shop():
         }
         print(task)
         queue_shopee.put(json.dumps(dict(task),cls = DateEnconding))
-        # break
+        break
 
 
 
