@@ -30,7 +30,7 @@ from by.pipline import dbpool
 from by.pipline.redisclient import RedisClient
 
 queue_shopee = RedisQueue('shopee', 'mz')
-redis_db = RedisClient(11)
+redis_db = RedisClient()
 
 
 def get_html(url):
@@ -48,7 +48,7 @@ def shop(task):
     shopid = task['shopid']
     try:
         url = "https://ph.xiapibuy.com/api/v4/shop/get_shop_detail?shopid={}&username=".format(shopid)
-        print(url)
+        # print(url)
         html = get_html(url)
         # print(html)
         json_str = json.loads(html)['data']
@@ -94,7 +94,6 @@ def shop(task):
         traceback.print_exc()
         print('shop异常--',e)
         queue_shopee.put(json.dumps(dict(task),cls = DateEnconding))
-    print('存入redis队列')
 
 
 # 店铺数据变更处理
@@ -103,16 +102,16 @@ def shop_change(shop):
     shop_id = shop['shopid']
     result = redis_db.hget("historical_shops",shop_id)
     if result is not None:
-        print('旧数据，比对')
+        # print('旧数据，比对')
         historical_shop = json.loads(result)
         change = json_tools.diff(dict(shop_change), historical_shop)
         if len(change) == 0:
-            print('数据未变动,只需要改动shopee_shope update_time')
+            # print('数据未变动,只需要改动shopee_shope update_time')
             sql = "update shopee_shope set update_time=%s , update_by= %s where shopid= %s"
             now_time = datetime.datetime.now()
             dbpool.Pool().update(sql,(now_time,'007',shop_id))
         else:
-            print('数据变动,更新shopee_shope，并插入shopee_shope_change一条变更后新数据')
+            # print('数据变动,更新shopee_shope，并插入shopee_shope_change一条变更后新数据')
             sql = "update shopee_shope set " \
                   "shopname=%s ," \
                   "icon=%s ," \
@@ -142,9 +141,9 @@ def shop_change(shop):
             dbpool.Pool().update(sql,params)
             dbpool.Pool().insert_temp('shopee_shope_change', shop,'shopee_shope_change')
     else:
-        print('新数据，入库shopee_shope,shopee_shope_change,并同步到historical_shops')
+        # print('新数据，入库shopee_shope,shopee_shope_change,并同步到historical_shops')
         dbpool.Pool().insert_temp('shopee_shope', shop,'shopee_shope')
-        dbpool.Pool().insert_temp('shopee_shope_change', shop,'shopee_shope_change')
+        # dbpool.Pool().insert_temp('shopee_shope_change', shop,'shopee_shope_change')
 
     # 无论是变更还是新增，都要同步到redis
     redis_db.hset('historical_shops',shop_id,json.dumps(dict(shop_change),cls = DateEnconding))
@@ -162,6 +161,7 @@ def product_list(task):
     try:
         level = task['level']
         if level ==1 :
+            #  by=pop流行  by=ctime最新  by=sales销量
             url = "https://ph.xiapibuy.com/api/v2/search_items/?by=pop&limit=30&match_id={}&newest=0&order=desc&page_type=shop&version=2".format(
                 shopid)
             task['url'] = url
@@ -171,7 +171,7 @@ def product_list(task):
             for i in range(1,page_num+1):
                 url = "https://ph.xiapibuy.com/api/v2/search_items/?by=pop&limit=30&match_id={}&newest={}&order=desc&page_type=shop&version=2".format(
                     shopid,i*30)
-                print(url)
+                # print(url)
                 new_task = trans_task(task)
                 new_task['level'] = 2
                 new_task['url'] = url
@@ -348,7 +348,7 @@ def product_change(product,item):
     spu = product['spu']
     result = redis_db.hget("historical_product",spu)
     if result is not None:
-        print('旧数据，比对')
+        # print('旧数据，比对')
         historical_product = json.loads(result)
         change = json_tools.diff(dict(product_change), historical_product)
         if len(change) == 0:
@@ -382,7 +382,7 @@ def product_change(product,item):
     else:
         # print('新数据，入库shopee_product,shopee_product_change,并同步到historical_shops')
         dbpool.Pool().insert_temp('shopee_product', product,'shopee_product')
-        dbpool.Pool().insert_temp('shopee_product_change', product,'shopee_product_change')
+        # dbpool.Pool().insert_temp('shopee_product_change', product,'shopee_product_change')
 
     redis_db.hset('historical_product',spu,json.dumps(dict(product_change),cls = DateEnconding))
 
@@ -434,17 +434,19 @@ def good_sub(json_str,product):
                 sub_list.append(sub_product)
         else:
             # print('新数据，入库 shopee_sub_product,shopee_sub_product_change,并同步到 historical_product_sub')
-            sub_list.append(sub_product)
+            # sub_list.append(sub_product)
             new_sub_list.append(sub_product)
         redis_db.hset('historical_product_sub',key,json.dumps(dict(product_sub_change),cls = DateEnconding))
 
-    sql = "update shopee_sub_product set update_time=%s , update_by= %s where spu= %s and sku = %s"
-    dbpool.Pool().update_many(sql,'shopee_sub_product update time',old_sub_list)
+    if len(old_sub_list) > 0:
+        sql = "update shopee_sub_product set update_time=%s , update_by= %s where spu= %s and sku = %s"
+        dbpool.Pool().update_many(sql,'shopee_sub_product update time',old_sub_list)
 
-    sql = "update shopee_sub_product set sales_attributes=%s ,price=%s ," \
-          "before_price=%s ,sold=%s ,quantity=%s ,status = %s ,update_time=%s ,update_by= %s" \
-          " where spu= %s and sku= %s"
-    dbpool.Pool().update_many(sql,'shopee_sub_product update',old_sub_change_list)
+    if len(old_sub_change_list) > 0:
+        sql = "update shopee_sub_product set sales_attributes=%s ,price=%s ," \
+              "before_price=%s ,sold=%s ,quantity=%s ,status = %s ,update_time=%s ,update_by= %s" \
+              " where spu= %s and sku= %s"
+        dbpool.Pool().update_many(sql,'shopee_sub_product update',old_sub_change_list)
 
     if len(new_sub_list) > 0:
         dbpool.Pool().insert_many_temp('shopee_sub_product', new_sub_list,'shopee_sub_product')
@@ -497,12 +499,12 @@ if __name__ == '__main__':
         "country": "PH",
     }
     # queue_shopee.put(json.dumps(dict(task),cls = DateEnconding))
-    # shop(task)
+    shop(task)
 
     task={"shopid": 283669838, "webid": 1, "country": "PH", "shopname": "T1 Summer", "url": "https://ph.xiapibuy.com/shop/283669838", "parse_type": "goods_list", "level": 1}
     # product_list(task)
 
     task= {"shopid": 283669838, "webid": 1, "country": "PH", "shopname": "T1 Summer", "url": "https://ph.xiapibuy.com/api/v2/search_items/?by=pop&limit=30&match_id=283669838&newest=0&order=desc&page_type=shop&version=2", "parse_type": "goods", "level": 1, "spu": 7543532138}
-    product(task)
+    # product(task)
 
 
