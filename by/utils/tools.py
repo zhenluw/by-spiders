@@ -4,14 +4,14 @@
  * @Author: wzl
  * @Date: 2021/1/27 16:43
 """
-
+import base64
 import datetime
 import json
 import random
 import time
 import re
 import traceback
-
+import hashlib
 # from fake_useragent import UserAgent
 
 
@@ -223,10 +223,30 @@ def get_date():
     return today,yesterday
 
 
-if __name__ == '__main__':
 
+def md5vale(key):
+    str = 'python42754275325727527我师傅附件送货飞机欧萨覅几哦啊飞机骚乱54275427542754275427542tab.com'
+    print(str)
+    print(len(str))
+    bytesStr = str.encode(encoding='utf-8')
+    bytesStr.decode()
+    b64str = base64.b64encode(bytesStr).decode()
+    print(b64str)
+    print(len(b64str))
+    a = base64.b64decode(b64str).decode()
+    print(a)
+    print(len(a))
+
+
+
+if __name__ == '__main__':
     a='最爱吃的就是安利\\(//∇//)\\11aa'
     # dd = datetime.datetime.strptime(a, '%Y-%m-%d %H')
     # print(dd)
     # print(replace_special_string(a))
-    print(random_ua())
+    # print(random_ua())
+    md5vale("大傻瓜")
+    # a= base64.b64encode("aaa") #base64加密
+    # print(a)
+    # b= base64.b64decode(a) #base64解密
+    # print(b)

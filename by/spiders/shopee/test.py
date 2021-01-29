@@ -26,5 +26,3 @@ for item in result:
     print(item['shopid'])
     redis_db.hset('shops',item['shopid'],0)
 
-
-
