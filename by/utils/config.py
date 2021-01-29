@@ -16,16 +16,16 @@ mysql_password = '1qaz2wsx'
 mysql_db = 'shopee'
 
 
-
-if ip.startswith("192.168"):
-    redis_host = 'localhost'
-    redis_password = ''
-
-    mysql_host='localhost'
-    mysql_port=3306
-    mysql_user='root'
-    mysql_password='123456'
-    mysql_db='zhonghai'
+#
+# if ip.startswith("192.168"):
+#     redis_host = 'localhost'
+#     redis_password = ''
+#
+#     mysql_host='localhost'
+#     mysql_port=3306
+#     mysql_user='root'
+#     mysql_password='123456'
+#     mysql_db='zhonghai'
 
 
 

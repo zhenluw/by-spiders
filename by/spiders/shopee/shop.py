@@ -253,12 +253,17 @@ def product(task):
 
         try:
             price_min_before_discount = item['price_min_before_discount']
+            if price_min_before_discount <= 0:
+                price_min_before_discount = 0
+
             product['min_price'] = int(price_min_before_discount)/100000
         except Exception:
             pass
 
         try:
             price_max_before_discount = item['price_max_before_discount']
+            if price_max_before_discount <= 0:
+                price_max_before_discount = 0
             product['max_price'] = int(price_max_before_discount)/100000
         except Exception:
             pass
@@ -463,11 +468,15 @@ def sub_entity(model,product):
     sub_product['url'] = 'https://ph.xiapibuy.com/product/{}/{}?sku={}'.format(product['shopid'],spu,sku)
     try:
         price = model['price']
+        if price <= 0:
+            price = 0
         sub_product['price'] = int(price)/100000
     except Exception:
         pass
     try:
         price_before_discount = model['price_before_discount']
+        if price_before_discount <= 0:
+            price_before_discount = 0
         sub_product['before_price'] = int(price_before_discount)/100000
     except Exception:
         pass

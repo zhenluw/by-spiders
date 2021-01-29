@@ -40,7 +40,7 @@ def shopee():
         queue_result = queue_shopee.get_nowait()
         # print(queue_result)
         if queue_result is not None:
-            result_f = json.loads(queue_result)
+            result_f = json.loads(queue_result.decode())
             if isinstance(result_f,dict):
                 task = trans_task(result_f)
                 deal(task)
@@ -76,7 +76,7 @@ def shopee_search():
 
 
 if __name__ == '__main__':
-    for i in range(5):
+    for i in range(3):
         t2 = threading.Thread(target = shopee)     # target是要执行的函数名（不是函数），args是函数对应的参数，以元组的形式存在
         t2.start()
     t1 = threading.Thread(target = shopee_search)     # target是要执行的函数名（不是函数），args是函数对应的参数，以元组的形式存在

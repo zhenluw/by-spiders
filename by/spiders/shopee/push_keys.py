@@ -9,17 +9,16 @@ import json
 import requests
 import sys
 import os
-
-from by.pipline.redisclient import RedisClient
-from by.pipline.redisqueue import RedisQueue
-from by.utils.tools import DateEnconding
-
 curPath = os.path.abspath(os.path.dirname(__file__))
 rootPath = os.path.split(curPath)[0]
 rootPath = os.path.split(rootPath)[0]
 rootPath = os.path.split(rootPath)[0]
 sys.path.append(rootPath)
 from by.pipline import dbpool
+from by.pipline.redisclient import RedisClient
+from by.pipline.redisqueue import RedisQueue
+from by.utils.tools import DateEnconding
+
 db = dbpool.Pool()
 queue_shopee_search = RedisQueue('shopee_search', 'mz')
 queue_shopee = RedisQueue('shopee', 'mz')
@@ -38,7 +37,7 @@ if __name__ == '__main__':
             "country": "PH",
         }
         queue_shopee.put(json.dumps(dict(task),cls = DateEnconding))
-        break
+        # break
 
 
 
