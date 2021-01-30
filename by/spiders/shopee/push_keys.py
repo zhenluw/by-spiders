@@ -67,10 +67,9 @@ def push_shop():
         break
 
 
-
 if __name__ == '__main__':
-    # push_search()
-    push_shop()
+    push_search()
+    # push_shop()
     # update_shop_to_redis()
 
 

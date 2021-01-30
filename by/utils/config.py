@@ -8,16 +8,16 @@ redis_port = 6379
 # Redis密码，如无填None
 redis_password = '1qaz@WSX'
 # 库
-# redis_db = 11
-redis_db = 12
+redis_db = 11
+# redis_db = 12
 
 # mysql账号
 mysql_host = 'rm-wz951334kg63k127t9o.mysql.rds.aliyuncs.com'
 mysql_port = 3306
 mysql_user = 'bin_li'
 mysql_password = '1qaz2wsx'
-# mysql_db = 'shopee'
-mysql_db = 'shopee_test'
+mysql_db = 'shopee'
+# mysql_db = 'shopee_test'
 
 
 # if ip.startswith("192.168"):

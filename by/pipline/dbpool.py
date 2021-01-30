@@ -56,6 +56,8 @@ class Pool():
         if param is None:
             count = self._cursor.executemany(sql)
         else:
+            print(sql)
+            print(param)
             count = self._cursor.executemany(sql, param)
         self._conn.commit()
         return count

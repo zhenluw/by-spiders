@@ -349,6 +349,7 @@ def product(task):
 
 # 商品数据变更处理
 def product_change(product,item):
+    pool = dbpool.Pool()
     product_change = trans_product_change(product)
     spu = product['spu']
     result = redis_db.hget("historical_product",spu)
@@ -384,25 +385,43 @@ def product_change(product,item):
                       spu)
             dbpool.Pool().update(sql,params)
             dbpool.Pool().insert_temp('shopee_product_change', product,'shopee_product_change')
+
+        # 子产品处理
+        good_sub_old(item,product)
+
     else:
         # print('新数据，入库shopee_product,shopee_product_change,并同步到historical_shops')
         dbpool.Pool().insert_temp('shopee_product', product,'shopee_product')
-        # dbpool.Pool().insert_temp('shopee_product_change', product,'shopee_product_change')
+
+        # 子产品处理
+        good_sub_new(item,product)
 
     redis_db.hset('historical_product',spu,json.dumps(dict(product_change),cls = DateEnconding))
 
-    # 子产品处理
-    good_sub(item,product)
+
+# 子商品new
+def good_sub_new(json_str,product):
+    new_sub_list = []
+    for model in json_str['models']:
+        sub_product = sub_entity(model,product)
+        product_sub_change = trans_product_sub_change(sub_product)
+        spu = sub_product['spu']
+        sku = sub_product['sku']
+        key = '{}{}'.format(spu,sku)
+        new_sub_list.append(sub_product)
+        redis_db.hset('historical_product_sub',key,json.dumps(dict(product_sub_change),cls = DateEnconding))
+
+    if len(new_sub_list) > 0:
+        dbpool.Pool().insert_many_temp('shopee_sub_product', new_sub_list,'shopee_sub_product')
 
 
-# 子商品
-def good_sub(json_str,product):
+# 子商品old
+def good_sub_old(json_str,product):
     sub_list = []
     new_sub_list = []
     old_sub_list = []
     old_sub_change_list = []
     for model in json_str['models']:
-
         sub_product = sub_entity(model,product)
 
         product_sub_change = trans_product_sub_change(sub_product)
@@ -444,8 +463,15 @@ def good_sub(json_str,product):
         redis_db.hset('historical_product_sub',key,json.dumps(dict(product_sub_change),cls = DateEnconding))
 
     if len(old_sub_list) > 0:
+        print('shopee_sub_product update time前')
+        start = datetime.datetime.now()
+
         sql = "update shopee_sub_product set update_time=%s , update_by= %s where spu= %s and sku = %s"
         dbpool.Pool().update_many(sql,'shopee_sub_product update time',old_sub_list)
+
+        print('shopee_sub_product update time后')
+        end = datetime.datetime.now()
+        print('------shi世间长---',end-start)
 
     if len(old_sub_change_list) > 0:
         sql = "update shopee_sub_product set sales_attributes=%s ,price=%s ," \
@@ -508,12 +534,25 @@ if __name__ == '__main__':
         "country": "PH",
     }
     # queue_shopee.put(json.dumps(dict(task),cls = DateEnconding))
-    shop(task)
+    # shop(task)
 
     task={"shopid": 283669838, "webid": 1, "country": "PH", "shopname": "T1 Summer", "url": "https://ph.xiapibuy.com/shop/283669838", "parse_type": "goods_list", "level": 1}
     # product_list(task)
 
     task= {"shopid": 283669838, "webid": 1, "country": "PH", "shopname": "T1 Summer", "url": "https://ph.xiapibuy.com/api/v2/search_items/?by=pop&limit=30&match_id=283669838&newest=0&order=desc&page_type=shop&version=2", "parse_type": "goods", "level": 1, "spu": 7543532138}
     # product(task)
+
+
+
+    # print('shopee_sub_product update time前')
+    # start = datetime.datetime.now()
+    #
+    # sql = "update shopee_sub_product set update_time=%s , update_by= %s where spu= %s and sku = %s"
+    # data = ('2021-01-29 23:27:39', '007', 889438219, 6154514473)
+    # dbpool.Pool().update(sql,data)
+    #
+    # print('shopee_sub_product update time后')
+    # end = datetime.datetime.now()
+    # print('------shi世间长---',end-start)
 
 
