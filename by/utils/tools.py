@@ -238,6 +238,17 @@ def md5vale(key):
     print(len(a))
 
 
+def sql_str_escape(str):
+    str = str.replace("'", "''")
+    str = str.replace('"', '""')
+    str = str.replace('\\', '\\\\\\\\')
+    str = str.replace('%', '\\%')
+    str = str.replace("％", "\\％")
+    str = str.replace("_", "\\_")
+    str = str.replace("＿", "\\＿")
+
+    return str
+
 
 if __name__ == '__main__':
     a='最爱吃的就是安利\\(//∇//)\\11aa'
