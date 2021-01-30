@@ -63,8 +63,11 @@ def push_shop():
             "country": "PH",
         }
         print(task)
+        if '306258110' in shopid:
+            continue
         queue_shopee.put(json.dumps(dict(task),cls = DateEnconding))
-        break
+
+        # break
 
 
 if __name__ == '__main__':

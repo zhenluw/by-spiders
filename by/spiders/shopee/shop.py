@@ -25,7 +25,7 @@ sys.path.append(rootPath)
 from by.pipline.redisqueue import RedisQueue
 from by.pipline.template import trans_shop, trans_task, trans_product, trans_sub_product, trans_shop_change, \
     trans_product_change, trans_product_sub_change
-from by.utils.tools import DateEnconding, sleep_random_time1
+from by.utils.tools import DateEnconding, sleep_random_time1, sql_str_escape
 from by.pipline import dbpool
 from by.pipline.redisclient import RedisClient
 
@@ -76,8 +76,7 @@ def shop(task):
 
         try:
             abstract = json_str['description']
-            abstract = abstract.replace("'", "''")
-            abstract = abstract.replace('"', '""')
+            abstract = sql_str_escape(abstract)
             shop['abstract'] = abstract
         except Exception:
             pass
@@ -215,6 +214,7 @@ def product_list_parse(task):
 def product(task):
     itemid = task['spu']
     shopid = task['shopid']
+    url=''
     try:
         url = "https://ph.xiapibuy.com/api/v2/item/get?itemid={}&shopid={}".format(itemid, shopid)
         html = get_html(url)
@@ -231,8 +231,7 @@ def product(task):
         product['shop_url'] = 'https://ph.xiapibuy.com/shop/{}'.format(shopid)
         product['spu'] = item['itemid']
         product_title = item['name']
-        product_title = product_title.replace("'", "''")
-        product_title = product_title.replace('"', '""')
+        product_title = sql_str_escape(product_title)
 
         product['product_title'] = product_title
         product['score'] = item['item_rating']['rating_star']
@@ -278,8 +277,7 @@ def product(task):
                 brand_value = brands['value']
                 if 'Brand' in brand_name:
                     brand = brand_value
-            brand = brand.replace("'", "''")
-            brand = brand.replace('"', '""')
+            brand = sql_str_escape(brand)
             product['brand'] = brand
         except Exception:
             pass
@@ -296,8 +294,7 @@ def product(task):
         try:
             product['cid1'] = item['categories'][0]['catid']
             display_name = item['categories'][0]['display_name']
-            display_name = display_name.replace("'", "''")
-            display_name = display_name.replace('"', '""')
+            display_name = sql_str_escape(display_name)
             product['cname1'] = display_name
         except Exception:
             pass
@@ -305,8 +302,7 @@ def product(task):
         try:
             product['cid2'] = item['categories'][1]['catid']
             display_name = item['categories'][1]['display_name']
-            display_name = display_name.replace("'", "''")
-            display_name = display_name.replace('"', '""')
+            display_name = sql_str_escape(display_name)
             product['cname2'] = display_name
         except Exception:
             pass
@@ -314,22 +310,19 @@ def product(task):
         try:
             product['cid3'] = item['categories'][2]['catid']
             display_name = item['categories'][2]['display_name']
-            display_name = display_name.replace("'", "''")
-            display_name = display_name.replace('"', '""')
+            display_name = sql_str_escape(display_name)
             product['cname3'] = display_name
         except Exception:
             pass
 
         description = item['description']
-        description = description.replace("'", "''")
-        description = description.replace('"', '""')
+        description = sql_str_escape(description)
         product['description'] = description
 
         product['status'] = 1
 
         attributes = json.dumps(item['attributes'])
-        attributes = attributes.replace("'", "''")
-        attributes = attributes.replace('"', '""')
+        attributes = sql_str_escape(attributes)
         product['specifications'] = attributes
         product['currency'] = item['currency']
 
@@ -343,7 +336,7 @@ def product(task):
         product_change(product,item)
     except Exception as e:
         traceback.print_exc()
-        print('goods异常--',e)
+        print('goods异常--',e,url)
         queue_shopee.put(json.dumps(dict(task),cls = DateEnconding))
 
 
@@ -436,7 +429,7 @@ def good_sub_old(json_str,product):
             if len(change) == 0:
                 # print('数据未变动,只需要改动shopee_product update_time')
                 now_time = datetime.datetime.now()
-                old_sub_list.append((now_time,'007',spu,sku))
+                # old_sub_list.append((now_time,'007',spu,sku))
             else:
                 # print('数据变动,更新 shopee_sub_product，并插入 shopee_sub_product_change 一条变更后新数据')
                 # status = 1 为了遇到曾经下架再次上架的商品，进行状态的改变
@@ -454,7 +447,7 @@ def good_sub_old(json_str,product):
                           '007',
                           spu,
                           sku)
-                old_sub_change_list.append(params)
+                # old_sub_change_list.append(params)
                 sub_list.append(sub_product)
         else:
             # print('新数据，入库 shopee_sub_product,shopee_sub_product_change,并同步到 historical_product_sub')
@@ -484,6 +477,7 @@ def good_sub_old(json_str,product):
 
     if len(sub_list) > 0:
         dbpool.Pool().insert_many_temp('shopee_sub_product_change', sub_list,'shopee_sub_product_change')
+
 
 
 # 组装sub实体
