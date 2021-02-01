@@ -19,10 +19,15 @@ from by.utils.tools import DateEnconding, sleep_random_time1
 from by.pipline import dbpool
 queue_shopee_search = RedisQueue('shopee_search', 'mz')
 queue_shopee = RedisQueue('shopee', 'mz')
-redis_db = RedisClient(11)
+# redis_db = RedisClient()
+cache_shop = RedisQueue('cache_shop', 'mz')
+cache_product = RedisQueue('cache_product', 'mz')
+cache_product_sub = RedisQueue('cache_product_sub', 'mz')
 
-result = dbpool.Pool().get_all("select distinct(shopid) from shopee_search")
-for item in result:
-    print(item['shopid'])
-    redis_db.hset('shops',item['shopid'],0)
+# result = dbpool.Pool().get_all("select distinct(shopid) from shopee_search")
+# for item in result:
+#     print(item['shopid'])
+#     redis_db.hset('shops',item['shopid'],0)
 
+for i in range(1000):
+    cache_product_sub.put(i)

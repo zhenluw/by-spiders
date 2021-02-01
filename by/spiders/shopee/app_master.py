@@ -28,8 +28,8 @@ def deal(task):
     if parse_type == 'search':
         search(task)
     if parse_type == 'shop':
-        # shop(task)
-        print()
+        shop(task)
+        # print()
     if parse_type == 'goods_list':
         product_list(task)
     if parse_type == 'goods':

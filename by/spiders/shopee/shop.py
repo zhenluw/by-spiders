@@ -29,6 +29,20 @@ from by.utils.tools import DateEnconding, sleep_random_time1, sql_str_escape
 from by.pipline import dbpool
 from by.pipline.redisclient import RedisClient
 
+cache_shop_insert = RedisQueue('cache_shop_insert', 'mz')
+cache_shop_change_insert = RedisQueue('cache_shop_change_insert', 'mz')
+cache_shop_update = RedisQueue('cache_shop_update', 'mz')
+cache_shop_update_time = RedisQueue('cache_shop_update_time', 'mz')
+
+cache_product_insert = RedisQueue('cache_product_insert', 'mz')
+cache_product_change_insert = RedisQueue('cache_product_change_insert', 'mz')
+cache_product_update = RedisQueue('cache_product_update', 'mz')
+cache_product_update_time = RedisQueue('cache_product_update_time', 'mz')
+
+cache_sub_product_insert = RedisQueue('cache_sub_product_insert', 'mz')
+cache_sub_product_change_insert = RedisQueue('cache_sub_product_change_insert', 'mz')
+cache_sub_product_update = RedisQueue('cache_sub_product_update', 'mz')
+
 queue_shopee = RedisQueue('shopee', 'mz')
 redis_db = RedisClient()
 
@@ -105,44 +119,15 @@ def shop_change(shop):
         historical_shop = json.loads(result)
         change = json_tools.diff(dict(shop_change), historical_shop)
         if len(change) == 0:
-            # print('数据未变动,只需要改动shopee_shope update_time')
-            sql = "update shopee_shope set update_time=%s , update_by= %s where shopid= %s"
-            now_time = datetime.datetime.now()
-            dbpool.Pool().update(sql,(now_time,'007',shop_id))
+            print('数据未变动,只需要改动shopee_shope update_time')
+            cache_shop_update_time.put(shop_id)
         else:
-            # print('数据变动,更新shopee_shope，并插入shopee_shope_change一条变更后新数据')
-            sql = "update shopee_shope set " \
-                  "shopname=%s ," \
-                  "icon=%s ," \
-                  "products=%s ," \
-                  "followers=%s ," \
-                  "following=%s ," \
-                  "rating_num=%s ," \
-                  "rating=%s ," \
-                  "chatperformance=%s ," \
-                  " abstract=%s ," \
-                  " update_time=%s ," \
-                  " update_by= %s" \
-                  " where shopid= %s"
-
-            params = (shop['shopname'],
-                      shop['icon'],
-                      shop['products'],
-                      shop['followers'],
-                      shop['following'],
-                      shop['rating_num'],
-                      shop['rating'],
-                      shop['chatperformance'],
-                      shop['abstract'],
-                      datetime.datetime.now(),
-                      '007',
-                      shop_id)
-            dbpool.Pool().update(sql,params)
-            dbpool.Pool().insert_temp('shopee_shope_change', shop,'shopee_shope_change')
+            print('数据变动,更新shopee_shope，并插入shopee_shope_change一条变更后新数据')
+            cache_shop_update.put(json.dumps(dict(shop),cls = DateEnconding))
+            cache_shop_change_insert.put(json.dumps(dict(shop),cls = DateEnconding))
     else:
-        # print('新数据，入库shopee_shope,shopee_shope_change,并同步到historical_shops')
-        dbpool.Pool().insert_temp('shopee_shope', shop,'shopee_shope')
-        # dbpool.Pool().insert_temp('shopee_shope_change', shop,'shopee_shope_change')
+        print('新数据，入库shopee_shope,shopee_shope_change,并同步到historical_shops')
+        cache_shop_insert.put(json.dumps(dict(shop),cls = DateEnconding))
 
     # 无论是变更还是新增，都要同步到redis
     redis_db.hset('historical_shops',shop_id,json.dumps(dict(shop_change),cls = DateEnconding))
@@ -160,15 +145,19 @@ def product_list(task):
     try:
         level = task['level']
         if level ==1 :
-            #  by=pop流行  by=ctime最新  by=sales销量
-            url = "https://ph.xiapibuy.com/api/v2/search_items/?by=pop&limit=30&match_id={}&newest=0&order=desc&page_type=shop&version=2".format(
+            #  by= pop 流行  by= ctime 最新  by= sales 销量
+            url = "https://ph.xiapibuy.com/api/v2/search_items/?by=sales&limit=30&match_id={}&newest=0&order=desc&page_type=shop&version=2".format(
                 shopid)
             task['url'] = url
             total_count = product_list_parse(task)
 
             page_num = int(total_count/30)
+
+            if page_num > 100:
+                page_num = 100
+
             for i in range(1,page_num+1):
-                url = "https://ph.xiapibuy.com/api/v2/search_items/?by=pop&limit=30&match_id={}&newest={}&order=desc&page_type=shop&version=2".format(
+                url = "https://ph.xiapibuy.com/api/v2/search_items/?by=sales&limit=30&match_id={}&newest={}&order=desc&page_type=shop&version=2".format(
                     shopid,i*30)
                 # print(url)
                 new_task = trans_task(task)
@@ -188,6 +177,7 @@ def product_list(task):
 def product_list_parse(task):
     url = task['url']
     try:
+        # print(url)
         html = get_html(url)
         # print(html)
         json_str = json.loads(html)
@@ -342,7 +332,6 @@ def product(task):
 
 # 商品数据变更处理
 def product_change(product,item):
-    pool = dbpool.Pool()
     product_change = trans_product_change(product)
     spu = product['spu']
     result = redis_db.hget("historical_product",spu)
@@ -351,40 +340,18 @@ def product_change(product,item):
         historical_product = json.loads(result)
         change = json_tools.diff(dict(product_change), historical_product)
         if len(change) == 0:
-            # print('数据未变动,只需要改动shopee_product update_time')
-            sql = "update shopee_product set update_time=%s ,status = 1 , update_by= %s where spu= %s"
-            now_time = datetime.datetime.now()
-            dbpool.Pool().update(sql,(now_time,'007',spu))
+            print('shopee_product update_time')
+            cache_product_update_time.put(spu)
         else:
-            # print('数据变动,更新shopee_product，并插入shopee_product_change一条变更后新数据')
-            # status = 1 为了遇到曾经下架再次上架的商品，进行状态的改变
-            sql = "update shopee_product set " \
-                  "historical_sold=%s ," \
-                  "price=%s ," \
-                  "height_price=%s ," \
-                  "product_title=%s ," \
-                  " quantity=%s ," \
-                  " status = 1 ," \
-                  " update_time=%s ," \
-                  " update_by= %s" \
-                  " where spu= %s"
-            params = (product['historical_sold'],
-                      product['price'],
-                      product['height_price'],
-                      product['product_title'],
-                      product['quantity'],
-                      datetime.datetime.now(),
-                      '007',
-                      spu)
-            dbpool.Pool().update(sql,params)
-            dbpool.Pool().insert_temp('shopee_product_change', product,'shopee_product_change')
+            print('shopee_product update，shopee_product_change insert')
+            cache_product_update.put(json.dumps(dict(product),cls = DateEnconding))
+            cache_product_change_insert.put(json.dumps(dict(product),cls = DateEnconding))
 
         # 子产品处理
         good_sub_old(item,product)
-
     else:
-        # print('新数据，入库shopee_product,shopee_product_change,并同步到historical_shops')
-        dbpool.Pool().insert_temp('shopee_product', product,'shopee_product')
+        print('shopee_product insert')
+        cache_product_insert.put(json.dumps(dict(product),cls = DateEnconding))
 
         # 子产品处理
         good_sub_new(item,product)
@@ -394,26 +361,18 @@ def product_change(product,item):
 
 # 子商品new
 def good_sub_new(json_str,product):
-    new_sub_list = []
     for model in json_str['models']:
         sub_product = sub_entity(model,product)
         product_sub_change = trans_product_sub_change(sub_product)
         spu = sub_product['spu']
         sku = sub_product['sku']
         key = '{}{}'.format(spu,sku)
-        new_sub_list.append(sub_product)
+        cache_sub_product_insert.put(json.dumps(dict(sub_product),cls = DateEnconding))
         redis_db.hset('historical_product_sub',key,json.dumps(dict(product_sub_change),cls = DateEnconding))
-
-    if len(new_sub_list) > 0:
-        dbpool.Pool().insert_many_temp('shopee_sub_product', new_sub_list,'shopee_sub_product')
 
 
 # 子商品old
 def good_sub_old(json_str,product):
-    sub_list = []
-    new_sub_list = []
-    old_sub_list = []
-    old_sub_change_list = []
     for model in json_str['models']:
         sub_product = sub_entity(model,product)
 
@@ -427,9 +386,7 @@ def good_sub_old(json_str,product):
             historical_product_sub = json.loads(result)
             change = json_tools.diff(dict(product_sub_change), historical_product_sub)
             if len(change) == 0:
-                # print('数据未变动,只需要改动shopee_product update_time')
-                now_time = datetime.datetime.now()
-                # old_sub_list.append((now_time,'007',spu,sku))
+                print('数据未变动,不做任何操作')
             else:
                 # print('数据变动,更新 shopee_sub_product，并插入 shopee_sub_product_change 一条变更后新数据')
                 # status = 1 为了遇到曾经下架再次上架的商品，进行状态的改变
@@ -437,47 +394,15 @@ def good_sub_old(json_str,product):
                 quantity = product['quantity']
                 if quantity == 0:
                     status = 0
-                params = (sub_product['sales_attributes'],
-                          sub_product['price'],
-                          sub_product['before_price'],
-                          sub_product['sold'],
-                          sub_product['quantity'],
-                          status,
-                          datetime.datetime.now(),
-                          '007',
-                          spu,
-                          sku)
-                # old_sub_change_list.append(params)
-                sub_list.append(sub_product)
+                sub_product['status'] = status
+
+                cache_sub_product_update.put(json.dumps(dict(sub_product),cls = DateEnconding))
+                cache_sub_product_change_insert.put(json.dumps(dict(sub_product),cls = DateEnconding))
+
         else:
-            # print('新数据，入库 shopee_sub_product,shopee_sub_product_change,并同步到 historical_product_sub')
-            # sub_list.append(sub_product)
-            new_sub_list.append(sub_product)
+            cache_sub_product_insert.put(json.dumps(dict(sub_product),cls = DateEnconding))
+
         redis_db.hset('historical_product_sub',key,json.dumps(dict(product_sub_change),cls = DateEnconding))
-
-    if len(old_sub_list) > 0:
-        print('shopee_sub_product update time前')
-        start = datetime.datetime.now()
-
-        sql = "update shopee_sub_product set update_time=%s , update_by= %s where spu= %s and sku = %s"
-        dbpool.Pool().update_many(sql,'shopee_sub_product update time',old_sub_list)
-
-        print('shopee_sub_product update time后')
-        end = datetime.datetime.now()
-        print('------shi世间长---',end-start)
-
-    if len(old_sub_change_list) > 0:
-        sql = "update shopee_sub_product set sales_attributes=%s ,price=%s ," \
-              "before_price=%s ,sold=%s ,quantity=%s ,status = %s ,update_time=%s ,update_by= %s" \
-              " where spu= %s and sku= %s"
-        dbpool.Pool().update_many(sql,'shopee_sub_product update',old_sub_change_list)
-
-    if len(new_sub_list) > 0:
-        dbpool.Pool().insert_many_temp('shopee_sub_product', new_sub_list,'shopee_sub_product')
-
-    if len(sub_list) > 0:
-        dbpool.Pool().insert_many_temp('shopee_sub_product_change', sub_list,'shopee_sub_product_change')
-
 
 
 # 组装sub实体
@@ -535,18 +460,3 @@ if __name__ == '__main__':
 
     task= {"shopid": 283669838, "webid": 1, "country": "PH", "shopname": "T1 Summer", "url": "https://ph.xiapibuy.com/api/v2/search_items/?by=pop&limit=30&match_id=283669838&newest=0&order=desc&page_type=shop&version=2", "parse_type": "goods", "level": 1, "spu": 7543532138}
     # product(task)
-
-
-
-    # print('shopee_sub_product update time前')
-    # start = datetime.datetime.now()
-    #
-    # sql = "update shopee_sub_product set update_time=%s , update_by= %s where spu= %s and sku = %s"
-    # data = ('2021-01-29 23:27:39', '007', 889438219, 6154514473)
-    # dbpool.Pool().update(sql,data)
-    #
-    # print('shopee_sub_product update time后')
-    # end = datetime.datetime.now()
-    # print('------shi世间长---',end-start)
-
-

@@ -8,6 +8,8 @@
 import json
 import sys
 import os
+import time
+
 curPath = os.path.abspath(os.path.dirname(__file__))
 rootPath = os.path.split(curPath)[0]
 rootPath = os.path.split(rootPath)[0]
@@ -63,16 +65,16 @@ def push_shop():
             "country": "PH",
         }
         print(task)
-        if '306258110' in shopid:
-            continue
+        # if '306258110' in shopid:
+        #     continue
         queue_shopee.put(json.dumps(dict(task),cls = DateEnconding))
-
         # break
+        # time.sleep(3)
 
 
 if __name__ == '__main__':
-    push_search()
-    # push_shop()
+    # push_search()
+    push_shop()
     # update_shop_to_redis()
 
 
