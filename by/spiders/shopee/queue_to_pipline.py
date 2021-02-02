@@ -160,8 +160,8 @@ def product_insert():
         if count0 > 100:
             try:
                 dbpool.Pool().insert_many_temp('shopee_product', data_list0,'shopee_product')
-            except Exception:
-                traceback.print_exc()
+            except Exception as e:
+                print('-shopee_product---',e)
                 for product in data_list0:
                     cache_product_insert.put(json.dumps(dict(product),cls = DateEnconding))
 
@@ -206,8 +206,9 @@ def product_change_insert():
         if count1 > 100:
             try:
                 dbpool.Pool().insert_many_temp('shopee_product_change', data_list1,'shopee_product_change')
-            except Exception:
-                traceback.print_exc()
+            except Exception as e:
+                print('-shopee_product_change---',e)
+                # traceback.print_exc()
                 for product in data_list1:
                     cache_product_change_insert.put(json.dumps(dict(product),cls = DateEnconding))
 
@@ -318,8 +319,8 @@ def product_update():
         if count3 > 100:
             try:
                 dbpool.Pool().update_many(sql,'shopee_product update ',data_list3)
-            except Exception:
-                traceback.print_exc()
+            except Exception as e:
+                print('-shopee_product update---',e)
                 for product in data_list3:
                     cache_product_update.put(json.dumps(dict(product),cls = DateEnconding))
 
@@ -364,8 +365,8 @@ def sub_product_insert():
         if count4 > 200:
             try:
                 dbpool.Pool().insert_many_temp('shopee_sub_product', data_list4,'shopee_sub_product')
-            except Exception:
-                traceback.print_exc()
+            except Exception as e:
+                print('-shopee_sub_product---',e)
                 for product in data_list4:
                     cache_sub_product_insert.put(json.dumps(dict(product),cls = DateEnconding))
 
@@ -410,8 +411,8 @@ def sub_product_change_insert():
         if count5 > 200:
             try:
                 dbpool.Pool().insert_many_temp('shopee_sub_product_change', data_list5,'shopee_sub_product_change')
-            except Exception:
-                traceback.print_exc()
+            except Exception as e:
+                print('-shopee_sub_product_change---',e)
                 for product in data_list5:
                     print(product)
                     cache_sub_product_change_insert.put(json.dumps(dict(product),cls = DateEnconding))
@@ -470,8 +471,8 @@ def sub_product_update():
         if count6 > 200:
             try:
                 dbpool.Pool().update_many(sql,'shopee_sub_product update',data_list6)
-            except Exception:
-                traceback.print_exc()
+            except Exception as e:
+                print('-shopee_sub_product update---',e)
                 for product in data_list6:
                     cache_sub_product_update.put(json.dumps(dict(product),cls = DateEnconding))
 

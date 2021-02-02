@@ -456,6 +456,8 @@ def sub_entity(model,product):
         sub_product['price'] = int(price)/100000
     except Exception:
         pass
+
+    sub_product['before_price'] = 0
     try:
         price_before_discount = model['price_before_discount']
         if price_before_discount <= 0:
