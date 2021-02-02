@@ -12,6 +12,8 @@ import sys
 import threading
 import time
 import traceback
+
+
 curPath = os.path.abspath(os.path.dirname(__file__))
 rootPath = os.path.split(curPath)[0]
 rootPath = os.path.split(rootPath)[0]
@@ -20,6 +22,7 @@ sys.path.append(rootPath)
 from by.pipline.redisqueue import RedisQueue
 from by.pipline import dbpool
 from by.utils.tools import DateEnconding
+from by.pipline.template import trans_product_entity
 
 cache_shop_insert = RedisQueue('cache_shop_insert', 'mz')
 cache_shop_change_insert = RedisQueue('cache_shop_change_insert', 'mz')
@@ -147,6 +150,7 @@ def product_insert():
         product = cache_product_insert.get_nowait()
         if product is not None:
             product = json.loads(product.decode())
+            product = trans_product_entity(product)
             data_list0.append(product)
             count0 += 1
         else:
@@ -165,7 +169,6 @@ def product_insert():
             count0 = 0
             start_time0 = get_time()
             data_list0 = []
-
         else:
             # 虽然数组个数没有100，但接受数据时间超过了10分钟，就批量存入msyql
             time_c = get_time() - start_time0
@@ -193,6 +196,7 @@ def product_change_insert():
         product = cache_product_change_insert.get_nowait()
         if product is not None:
             product = json.loads(product.decode())
+            product = trans_product_entity(product)
             data_list1.append(product)
             count1 += 1
         else:
@@ -211,7 +215,6 @@ def product_change_insert():
             count1 = 0
             start_time1 = get_time()
             data_list1 = []
-
         else:
             # 虽然数组个数没有100，但接受数据时间超过了10分钟，就批量存入msyql
             time_c = get_time() - start_time1
@@ -247,7 +250,7 @@ def product_update_time():
             time.sleep(5)
 
         # 首先判断数组内数据个数是否达到100，达到，就批量存入msyql
-        if count2 > 20:
+        if count2 > 200:
             try:
                 dbpool.Pool().update_many(sql,'shopee_product update time',data_list2)
             except Exception:
@@ -263,7 +266,7 @@ def product_update_time():
         else:
             # 虽然数组个数没有100，但接受数据时间超过了10分钟，就批量存入msyql
             time_c = get_time() - start_time2
-            if time_c > 300:
+            if time_c > 100:
                 if len(data_list2) > 0:
                     try:
                         dbpool.Pool().update_many(sql,'shopee_product update time',data_list2)
@@ -305,16 +308,16 @@ def product_update():
                       product['quantity'],
                       datetime.datetime.now(),
                       '007',
-                      product['spu'])
+                      str(product['spu']))
             data_list3.append(params)
             count3 += 1
         else:
             time.sleep(5)
 
         # 首先判断数组内数据个数是否达到100，达到，就批量存入msyql
-        if count3 > 50:
+        if count3 > 100:
             try:
-                dbpool.Pool().update_many(sql,'shopee_product update time',data_list3)
+                dbpool.Pool().update_many(sql,'shopee_product update ',data_list3)
             except Exception:
                 traceback.print_exc()
                 for product in data_list3:
@@ -404,12 +407,13 @@ def sub_product_change_insert():
             time.sleep(5)
 
         # 首先判断数组内数据个数是否达到100，达到，就批量存入msyql
-        if count5 > 100:
+        if count5 > 200:
             try:
                 dbpool.Pool().insert_many_temp('shopee_sub_product_change', data_list5,'shopee_sub_product_change')
             except Exception:
                 traceback.print_exc()
                 for product in data_list5:
+                    print(product)
                     cache_sub_product_change_insert.put(json.dumps(dict(product),cls = DateEnconding))
 
     # 重置 count start_time
@@ -455,15 +459,15 @@ def sub_product_update():
                     sub_product['status'],
                       datetime.datetime.now(),
                       '007',
-                    sub_product['spu'],
-                    sub_product['sku'])
+                      str(sub_product['spu']),
+                      str(sub_product['sku']))
             data_list6.append(params)
             count6 += 1
         else:
             time.sleep(5)
 
         # 首先判断数组内数据个数是否达到100，达到，就批量存入msyql
-        if count6 > 100:
+        if count6 > 200:
             try:
                 dbpool.Pool().update_many(sql,'shopee_sub_product update',data_list6)
             except Exception:
@@ -494,6 +498,7 @@ def sub_product_update():
                 data_list6 = []
 
 
+
 if __name__ == '__main__':
     t_shop_insert = threading.Thread(target = shop_insert)
     t_shop_insert.start()
@@ -508,6 +513,7 @@ if __name__ == '__main__':
     t_product_insert.start()
     t_product_change_insert = threading.Thread(target = product_change_insert)
     t_product_change_insert.start()
+
     t_product_update = threading.Thread(target = product_update)
     t_product_update.start()
     t_product_update_time = threading.Thread(target = product_update_time)

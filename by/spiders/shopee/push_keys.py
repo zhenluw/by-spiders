@@ -56,6 +56,7 @@ def push_search():
 # 将redis中shops库的所有数据推送到shop采集任务队列中
 def push_shop():
     shopids = redis_db.hgetall("shops")
+    # print(shopids)
     for shopid in shopids:
         task = {
             "shopid":shopid,
@@ -65,7 +66,7 @@ def push_shop():
             "country": "PH",
         }
         print(task)
-        # if '306258110' in shopid:
+        # if '3990857' in shopid:
         #     continue
         queue_shopee.put(json.dumps(dict(task),cls = DateEnconding))
         # break

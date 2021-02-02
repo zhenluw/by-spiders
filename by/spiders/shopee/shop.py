@@ -26,7 +26,6 @@ from by.pipline.redisqueue import RedisQueue
 from by.pipline.template import trans_shop, trans_task, trans_product, trans_sub_product, trans_shop_change, \
     trans_product_change, trans_product_sub_change
 from by.utils.tools import DateEnconding, sleep_random_time1, sql_str_escape
-from by.pipline import dbpool
 from by.pipline.redisclient import RedisClient
 
 cache_shop_insert = RedisQueue('cache_shop_insert', 'mz')
@@ -88,15 +87,28 @@ def shop(task):
         joined_time = json_str['ctime']
         shop['joined_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(joined_time))
 
-        try:
-            abstract = json_str['description']
-            abstract = sql_str_escape(abstract)
-            shop['abstract'] = abstract
-        except Exception:
-            pass
+        # try:
+        #     abstract = json_str['description']
+        #     abstract = sql_str_escape(abstract)
+        #     shop['abstract'] = abstract
+        # except Exception:
+        #     pass
+
+        shop['abstract'] = ''
 
         shop['response_time']= json_str['preparation_time']
         shop['login_user'] = json_str['account']['username']
+
+        try:
+            flag = json_str['is_shopee_verified']
+            if flag:
+                shop['preferred'] = 1
+            else:
+                shop['preferred'] = 0
+        except Exception:
+            pass
+
+
 
         shop['url'] = 'https://ph.xiapibuy.com/shop/{}'.format(shopid)
         shop['create_time']= datetime.datetime.now()
@@ -119,14 +131,14 @@ def shop_change(shop):
         historical_shop = json.loads(result)
         change = json_tools.diff(dict(shop_change), historical_shop)
         if len(change) == 0:
-            print('数据未变动,只需要改动shopee_shope update_time')
+            print('shopee_shope update time')
             cache_shop_update_time.put(shop_id)
         else:
-            print('数据变动,更新shopee_shope，并插入shopee_shope_change一条变更后新数据')
+            print('shopee_shope update，hopee_shope_change insert')
             cache_shop_update.put(json.dumps(dict(shop),cls = DateEnconding))
             cache_shop_change_insert.put(json.dumps(dict(shop),cls = DateEnconding))
     else:
-        print('新数据，入库shopee_shope,shopee_shope_change,并同步到historical_shops')
+        print('shopee_shope,shopee_shope_change insert')
         cache_shop_insert.put(json.dumps(dict(shop),cls = DateEnconding))
 
     # 无论是变更还是新增，都要同步到redis
@@ -305,9 +317,32 @@ def product(task):
         except Exception:
             pass
 
-        description = item['description']
-        description = sql_str_escape(description)
-        product['description'] = description
+        try:
+            ctime = item['ctime']
+            product['time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ctime))
+        except Exception:
+            pass
+
+        product['flash_deals'] = 0
+        try:
+            upcoming_flash_sale = item['upcoming_flash_sale']
+            if upcoming_flash_sale:
+                product['flash_deals'] = 1
+        except Exception:
+            pass
+
+        product['view_count'] = 0
+        try:
+            view_count = item['view_count']
+            if view_count:
+                product['view_count'] = view_count
+        except Exception:
+            pass
+
+
+        # description = item['description']
+        # description = sql_str_escape(description)
+        # product['description'] = ''
 
         product['status'] = 1
 
@@ -386,7 +421,8 @@ def good_sub_old(json_str,product):
             historical_product_sub = json.loads(result)
             change = json_tools.diff(dict(product_sub_change), historical_product_sub)
             if len(change) == 0:
-                print('数据未变动,不做任何操作')
+                # print('数据未变动,不做任何操作')
+                print()
             else:
                 # print('数据变动,更新 shopee_sub_product，并插入 shopee_sub_product_change 一条变更后新数据')
                 # status = 1 为了遇到曾经下架再次上架的商品，进行状态的改变

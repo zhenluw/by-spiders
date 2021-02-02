@@ -11,10 +11,11 @@
 # patch = json_tools.diff(src, dst)
 # print(patch)
 # print(len(patch))
+import json
 
 from by.pipline.redisclient import RedisClient
 from by.pipline.redisqueue import RedisQueue
-from by.pipline.template import trans_search, trans_task
+from by.pipline.template import trans_search, trans_task, Product
 from by.utils.tools import DateEnconding, sleep_random_time1
 from by.pipline import dbpool
 queue_shopee_search = RedisQueue('shopee_search', 'mz')
@@ -29,5 +30,8 @@ cache_product_sub = RedisQueue('cache_product_sub', 'mz')
 #     print(item['shopid'])
 #     redis_db.hset('shops',item['shopid'],0)
 
-for i in range(1000):
-    cache_product_sub.put(i)
+# for i in range(1000):
+#     cache_product_sub.put(i)
+
+if __name__ == '__main__':
+    print(Product())
