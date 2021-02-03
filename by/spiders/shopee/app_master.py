@@ -29,7 +29,6 @@ def deal(task):
         search(task)
     if parse_type == 'shop':
         shop(task)
-        # print()
     if parse_type == 'goods_list':
         product_list(task)
     if parse_type == 'goods':
@@ -80,7 +79,7 @@ if __name__ == '__main__':
     for i in range(10):
         t2 = threading.Thread(target = shopee)     # target是要执行的函数名（不是函数），args是函数对应的参数，以元组的形式存在
         t2.start()
-    for i in range(3):
+    for i in range(2):
         t2 = threading.Thread(target = shopee_search)     # target是要执行的函数名（不是函数），args是函数对应的参数，以元组的形式存在
         t2.start()
 

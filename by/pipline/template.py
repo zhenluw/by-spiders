@@ -1,3 +1,4 @@
+import datetime
 import os
 import sys
 curPath = os.path.abspath(os.path.dirname(__file__))
@@ -30,6 +31,7 @@ class Shop(item.Item):
     create_by = item.Field()
     update_by = item.Field()
     login_user = item.Field()
+    preferred = item.Field()
 
 
 def trans_shop(result):
@@ -82,6 +84,9 @@ class Product(item.Item):
     cname2 = item.Field()
     cid3 = item.Field()
     cname3 = item.Field()
+    time = item.Field()
+    flash_deals = item.Field()
+    view_count = item.Field()
 
 
 def trans_product(result):
@@ -235,4 +240,59 @@ def trans_product_sub_change(result):
         except Exception:
             pass
     return product_sub_change
+
+
+def trans_product_entity(result):
+    product_json = {
+        "webid" : None,
+        "country" : None,
+        "spu" : None,
+        "status" : None,
+        "product_title" : None,
+
+        "score" : None,
+        "ratings" : None,
+        "sold" : None,
+        "historical_sold" : None,
+        "price" : None,
+
+        "height_price" : None,
+        "min_price" : None,
+        "max_price" : None,
+        "quantity" : None,
+        "shopid" : None,
+
+        "brand" : None,
+        "specifications" : None,
+        "description" : None,
+        "create_time" : datetime.datetime.now(),
+        "update_time" : datetime.datetime.now(),
+
+        "create_by" : None,
+        "update_by" : None,
+        "currency" : None,
+        "url" : None,
+        "shop_url"  : None,
+
+        "shipping_from" : None,
+        "shipping_cost" : 0,
+        "cid1" : None,
+        "cname1" : None,
+        "cid2" : None,
+
+        "cname2" : None,
+        "cid3" : None,
+        "cname3" : None,
+        "time" : '',
+        "flash_deals" : None,
+
+        "view_count" : 0
+    }
+    for key in result.keys():
+        try:
+            product_json[key] = result[key]
+        except Exception:
+            pass
+    return product_json
+
 
