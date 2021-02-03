@@ -153,7 +153,7 @@ def product_insert():
             time.sleep(10)
 
         # 首先判断数组内数据个数是否达到100，达到，就批量存入msyql
-        if count0 > 100:
+        if count0 > 1:
             try:
                 dbpool.Pool().insert_many_temp('shopee_product', data_list0,'shopee_product')
             except Exception:
@@ -193,41 +193,44 @@ def product_change_insert():
         product = cache_product_change_insert.get_nowait()
         if product is not None:
             product = json.loads(product.decode())
+            try:
+                dbpool.Pool().insert_temp('shopee_product_change', product,'shopee_product_change')
+            except Exception:
+                traceback.print_exc()
             data_list1.append(product)
             count1 += 1
         else:
             time.sleep(5)
 
         # 首先判断数组内数据个数是否达到100，达到，就批量存入msyql
-        if count1 > 100:
-            try:
-                dbpool.Pool().insert_many_temp('shopee_product_change', data_list1,'shopee_product_change')
-            except Exception:
-                traceback.print_exc()
-                for product in data_list1:
-                    cache_product_change_insert.put(json.dumps(dict(product),cls = DateEnconding))
-
-            # 重置 count start_time
-            count1 = 0
-            start_time1 = get_time()
-            data_list1 = []
-
-        else:
-            # 虽然数组个数没有100，但接受数据时间超过了10分钟，就批量存入msyql
-            time_c = get_time() - start_time1
-            if time_c > 300:
-                if len(data_list1) > 0:
-                    try:
-                        dbpool.Pool().insert_many_temp('shopee_product_change', data_list1,'shopee_product_change')
-                    except Exception:
-                        traceback.print_exc()
-                        for product in data_list1:
-                            cache_product_change_insert.put(json.dumps(dict(product),cls = DateEnconding))
-
-                # 重置 count = 0 start_time
-                count1 = 0
-                start_time1 = get_time()
-                data_list1 = []
+        # if count1 > 1:
+        #     try:
+        #         dbpool.Pool().insert_many_temp('shopee_product_change', data_list1,'shopee_product_change')
+        #     except Exception:
+        #         traceback.print_exc()
+        #         for product in data_list1:
+        #             cache_product_change_insert.put(json.dumps(dict(product),cls = DateEnconding))
+        #
+        #     # 重置 count start_time
+        #     count1 = 0
+        #     start_time1 = get_time()
+        #     data_list1 = []
+        # else:
+        #     # 虽然数组个数没有100，但接受数据时间超过了10分钟，就批量存入msyql
+        #     time_c = get_time() - start_time1
+        #     if time_c > 300:
+        #         if len(data_list1) > 0:
+        #             try:
+        #                 dbpool.Pool().insert_many_temp('shopee_product_change', data_list1,'shopee_product_change')
+        #             except Exception:
+        #                 traceback.print_exc()
+        #                 for product in data_list1:
+        #                     cache_product_change_insert.put(json.dumps(dict(product),cls = DateEnconding))
+        #
+        #         # 重置 count = 0 start_time
+        #         count1 = 0
+        #         start_time1 = get_time()
+        #         data_list1 = []
 
 
 #  商品时间update
@@ -247,7 +250,7 @@ def product_update_time():
             time.sleep(5)
 
         # 首先判断数组内数据个数是否达到100，达到，就批量存入msyql
-        if count2 > 20:
+        if count2 > 200:
             try:
                 dbpool.Pool().update_many(sql,'shopee_product update time',data_list2)
             except Exception:
@@ -312,9 +315,11 @@ def product_update():
             time.sleep(5)
 
         # 首先判断数组内数据个数是否达到100，达到，就批量存入msyql
-        if count3 > 50:
+        if count3 > 10:
             try:
-                dbpool.Pool().update_many(sql,'shopee_product update time',data_list3)
+                print('------1')
+                dbpool.Pool().update_many(sql,'shopee_product update ',data_list3)
+                print('------2')
             except Exception:
                 traceback.print_exc()
                 for product in data_list3:
@@ -331,7 +336,7 @@ def product_update():
             if time_c > 300:
                 if len(data_list3) > 0:
                     try:
-                        dbpool.Pool().update_many(sql,'shopee_product update time',data_list3)
+                        dbpool.Pool().update_many(sql,'shopee_product update ',data_list3)
                     except Exception:
                         traceback.print_exc()
                         for product in data_list3:
@@ -495,27 +500,28 @@ def sub_product_update():
 
 
 if __name__ == '__main__':
-    t_shop_insert = threading.Thread(target = shop_insert)
-    t_shop_insert.start()
-    t_shop_change_insert = threading.Thread(target = shop_change_insert)
-    t_shop_change_insert.start()
-    t_shop_update = threading.Thread(target = shop_update)
-    t_shop_update.start()
-    t_shop_update_time = threading.Thread(target = shop_update_time)
-    t_shop_update_time.start()
+    # t_shop_insert = threading.Thread(target = shop_insert)
+    # t_shop_insert.start()
+    # t_shop_change_insert = threading.Thread(target = shop_change_insert)
+    # t_shop_change_insert.start()
+    # t_shop_update = threading.Thread(target = shop_update)
+    # t_shop_update.start()
+    # t_shop_update_time = threading.Thread(target = shop_update_time)
+    # t_shop_update_time.start()
 
-    t_product_insert = threading.Thread(target = product_insert)
-    t_product_insert.start()
-    t_product_change_insert = threading.Thread(target = product_change_insert)
-    t_product_change_insert.start()
+    # t_product_insert = threading.Thread(target = product_insert)
+    # t_product_insert.start()
+    for i in range(10):
+        t_product_change_insert = threading.Thread(target = product_change_insert)
+        t_product_change_insert.start()
     t_product_update = threading.Thread(target = product_update)
     t_product_update.start()
     t_product_update_time = threading.Thread(target = product_update_time)
     t_product_update_time.start()
 
-    t_sub_product_insert = threading.Thread(target = sub_product_insert)
-    t_sub_product_insert.start()
-    t_sub_product_change_insert = threading.Thread(target = sub_product_change_insert)
-    t_sub_product_change_insert.start()
-    t_sub_product_update = threading.Thread(target = sub_product_update)
-    t_sub_product_update.start()
+    # t_sub_product_insert = threading.Thread(target = sub_product_insert)
+    # t_sub_product_insert.start()
+    # t_sub_product_change_insert = threading.Thread(target = sub_product_change_insert)
+    # t_sub_product_change_insert.start()
+    # t_sub_product_update = threading.Thread(target = sub_product_update)
+    # t_sub_product_update.start()
